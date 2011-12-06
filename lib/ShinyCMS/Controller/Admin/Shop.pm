@@ -1,10 +1,16 @@
 package ShinyCMS::Controller::Admin::Shop;
 
 use Moose;
+use Moose::Util::TypeConstraints; # For enum
 use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller'; }
 
+has comments_default => (
+    is => 'ro',
+    isa => enum([qw/ Yes No /],
+    required => 1,
+);
 
 =head1 NAME
 
@@ -155,8 +161,8 @@ sub add_item : Chained( 'base' ) : PathPart( 'add-item' ) : Args( 0 ) {
 	$c->{ stash }->{ images } = $c->controller( 'Root' )->get_filenames( $c, 'shop-images/original' );
 	
 	# Find default comment setting and pass through
-	$c->stash->{ comments_default_on } = 'YES' 
-		if uc $c->config->{ Shop }->{ comments_default } eq 'YES';
+	$c->stash(comments_default_on => 'YES' )
+		if $self->comments_default eq 'Yes';
 	
 	$c->stash->{ template } = 'admin/shop/edit_item.tt';
 }
