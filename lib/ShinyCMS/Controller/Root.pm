@@ -1,6 +1,7 @@
 package ShinyCMS::Controller::Root;
 
 use Moose;
+use MooseX::Types::Moose qw/ Str /;
 use namespace::autoclean;
 
 BEGIN { extends 'ShinyCMS::Controller'; }

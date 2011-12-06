@@ -8,7 +8,7 @@ BEGIN { extends 'Catalyst::Controller'; }
 
 has comments_default => (
     is => 'ro',
-    isa => enum([qw/ Yes No /],
+    isa => enum([qw/ Yes No /]),
     required => 1,
 );
 
