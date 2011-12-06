@@ -27,9 +27,9 @@ For now, forwards to the category list.
 
 sub index : Path : Args( 0 ) {
 	my ( $self, $c ) = @_;
-	
+
 	# TODO: Storefront - special offers, featured items, new additions, etc
-	
+
 	$c->go('view_categories');
 }
 
@@ -42,10 +42,10 @@ Sets up the base part of the URL path.
 
 sub base : Chained('/') : PathPart('shop') : CaptureArgs(0) {
 	my ( $self, $c ) = @_;
-	
+
 	# Stash the upload_dir setting
 	$c->stash->{ upload_dir } = $c->config->{ upload_dir };
-	
+
 	# Stash the controller name
 	$c->stash->{ controller } = 'Shop';
 }
@@ -59,7 +59,7 @@ Return the top-level categories.
 
 sub get_categories {
 	my ( $self, $c ) = @_;
-	
+
 	my $categories = $c->model( 'DB::ShopCategory' )->search(
 		{
 			parent => undef,
@@ -68,7 +68,7 @@ sub get_categories {
 			order_by => { -asc => 'name' },
 		}
 	);
-	
+
 	return $categories;
 }
 
@@ -81,9 +81,9 @@ View all the categories (for shop-user).
 
 sub view_categories : Chained( 'base' ) : PathPart( 'categories' ) : Args( 0 ) {
 	my ( $self, $c ) = @_;
-	
+
 	$c->forward( 'Root', 'build_menu' );
-	
+
 	my $categories = $self->get_categories( $c );
 	$c->stash->{ categories } = $categories;
 }
@@ -97,7 +97,7 @@ Catch people traversing the URL path by hand and show them something useful.
 
 sub no_category_specified : Chained( 'base' ) : PathPart( 'category' ) : Args( 0 ) {
 	my ( $self, $c ) = @_;
-	
+
 	$c->go( 'view_categories' );
 }
 
@@ -110,7 +110,7 @@ Stash details relating to the specified category.
 
 sub get_category : Chained( 'base' ) : PathPart( 'category' ) : CaptureArgs( 1 ) {
 	my ( $self, $c, $category_id ) = @_;
-	
+
 	if ( $category_id =~ /\D/ ) {
 		# non-numeric identifier (category url_name)
 		$c->stash->{ category } = $c->model( 'DB::ShopCategory' )->find( { url_name => $category_id } );
@@ -119,9 +119,9 @@ sub get_category : Chained( 'base' ) : PathPart( 'category' ) : CaptureArgs( 1 )
 		# numeric identifier
 		$c->stash->{ category } = $c->model( 'DB::ShopCategory' )->find( { id => $category_id } );
 	}
-	
+
 	unless ( $c->stash->{ category } ) {
-		$c->flash->{ error_msg } = 
+		$c->flash->{ error_msg } =
 			'Category not found - please choose from the options below';
 		$c->go( 'view_categories' );
 	}
@@ -136,10 +136,10 @@ Fetch items in the specified category.
 
 sub get_category_items {
 	my ( $self, $c, $category_id, $page, $count ) = @_;
-	
+
 	$page  ||= 1;
 	$count ||= 10;
-	
+
 	my $items = $c->model( 'DB::ShopCategory' )->find(
 		{
 			id => $category_id,
@@ -153,7 +153,7 @@ sub get_category_items {
 			rows     => $count,
 		}
 	);
-	
+
 	return $items;
 }
 
@@ -166,12 +166,12 @@ View all items in the specified category.
 
 sub view_category : Chained( 'get_category' ) : PathPart( '' ) : OptionalArgs( 2 ) {
 	my ( $self, $c, $page, $count ) = @_;
-	
+
 	$c->forward( 'Root', 'build_menu' );
-	
+
 	$page  ||= 1;
-	$count ||= $c->config->{ Shop }->{ items_per_page };
-	
+	$count ||= $self->items_per_page;
+
 	my $items = $self->get_category_items( $c, $c->stash->{ category }->id, $page, $count );
 	$c->stash->{ shop_items } = $items;
 }
@@ -185,10 +185,10 @@ Fetch recently-added items.
 
 sub get_recent_items {
 	my ( $self, $c, $page, $count ) = @_;
-	
+
 	$page  ||= 1;
 	$count ||= 10;
-	
+
 	my $items = $c->model( 'DB::ShopItem' )->search(
 		{
 			hidden   => 'false',
@@ -199,7 +199,7 @@ sub get_recent_items {
 			rows     => $count,
 		}
 	);
-	
+
 	return $items;
 }
 
@@ -212,14 +212,14 @@ View recently-added items.
 
 sub view_recent_items : Chained( 'base' ) : PathPart( 'recent' ) : OptionalArgs( 2 ) {
 	my ( $self, $c, $page, $count ) = @_;
-	
+
 	$c->forward( 'Root', 'build_menu' );
-	
+
 	$page  ||= 1;
 	$count ||= $c->config->{ Shop }->{ items_per_page };
-	
+
 	my $items = $self->get_recent_items( $c, $page, $count );
-	
+
 	$c->stash->{ recent_items } = $items;
 }
 
@@ -232,10 +232,10 @@ Fetch items with a specified tag.
 
 sub get_tagged_items {
 	my ( $self, $c, $tag, $page, $count ) = @_;
-	
+
 	$page  ||= 1;
 	$count ||= 10;
-	
+
 	my @tags = $c->model( 'DB::Tag' )->search({
 		tag => $tag,
 	});
@@ -248,7 +248,7 @@ sub get_tagged_items {
 		next unless $tagset->resource_type eq 'ShopItem';
 		push @tagged, $tagset->get_column( 'resource_id' ),
 	}
-	
+
 	my $items = $c->model( 'DB::ShopItem' )->search(
 		{
 			id       => { 'in' => \@tagged },
@@ -260,7 +260,7 @@ sub get_tagged_items {
 			rows     => $count,
 		},
 	);
-	
+
 	return $items;
 }
 
@@ -273,14 +273,14 @@ View items with a specified tag.
 
 sub view_tagged_items : Chained( 'base' ) : PathPart( 'tag' ) : Args( 1 ) : OptionalArgs( 2 ) {
 	my ( $self, $c, $tag, $page, $count ) = @_;
-	
+
 	$c->forward( 'Root', 'build_menu' );
-	
+
 	$page  ||= 1;
 	$count ||= $c->config->{ Shop }->{ items_per_page };
-	
+
 	my $items = $self->get_tagged_items( $c, $tag, $page, $count );
-	
+
 	$c->stash->{ tag          } = $tag;
 	$c->stash->{ tagged_items } = $items;
 }
@@ -294,7 +294,7 @@ Find the item we're interested in and stick it in the stash.
 
 sub get_item : Chained( 'base' ) : PathPart( 'item' ) : CaptureArgs( 1 ) {
 	my ( $self, $c, $item_id ) = @_;
-	
+
 	if ( $item_id =~ /\D/ ) {
 		# non-numeric identifier (product code)
 		$c->stash->{ item } = $c->model( 'DB::ShopItem' )->find({
@@ -309,7 +309,7 @@ sub get_item : Chained( 'base' ) : PathPart( 'item' ) : CaptureArgs( 1 ) {
 			hidden => 'false',
 		});
 	}
-	
+
 	unless ( $c->stash->{ item } ) {
 		$c->stash->{ error_msg } = 'Specified item not found.  Please try again.';
 		$c->go( 'view_categories' );
@@ -325,7 +325,7 @@ Get the tags for a specified item, or for the whole shop if no item is specified
 
 sub get_tags {
 	my ( $self, $c, $item_id ) = @_;
-	
+
 	if ( $item_id ) {
 		my $tagset = $c->model( 'DB::Tagset' )->find({
 			resource_id   => $item_id,
@@ -349,7 +349,7 @@ sub get_tags {
 		@tags = sort { lc $a cmp lc $b } @tags;
 		return \@tags;
 	}
-	
+
 	return;
 }
 
@@ -362,14 +362,14 @@ View an item.
 
 sub view_item : Chained( 'get_item' ) : PathPart( '' ) : Args( 0 ) {
 	my ( $self, $c ) = @_;
-	
+
 	$c->forward( 'Root', 'build_menu' );
-	
+
 	# Stash the tags
 	$c->stash->{ shop_item_tags } = $self->get_tags( $c, $c->stash->{ item }->id );
-	
+
 	# Set template
-	$c->stash->{ template } = 
+	$c->stash->{ template } =
 		'shop/product-type-templates/'. $c->stash->{ item }->product_type->template_file;
 }
 
@@ -382,9 +382,9 @@ Like (or unlike) an item.
 
 sub like_item : Chained( 'get_item' ) : PathPart( 'like' ) : Args( 0 ) {
 	my ( $self, $c ) = @_;
-	
+
 	my $level = $c->config->{ Shop }->{ can_like };
-	
+
 	if ( $level eq 'User' ) {
 		unless ( $c->user_exists ) {
 			$c->flash->{ error_msg } = 'You must be logged in to like this item.';
@@ -392,9 +392,9 @@ sub like_item : Chained( 'get_item' ) : PathPart( 'like' ) : Args( 0 ) {
 			return;
 		}
 	}
-	
+
 	my $ip_address = $c->request->address;
-	
+
 	# Find out if this user or IP address has already liked this item
 	if ( $c->user_exists and $c->stash->{ item }->liked_by_user( $c->user->id ) ) {
 		# Undo like by logged-in user
@@ -427,7 +427,7 @@ sub like_item : Chained( 'get_item' ) : PathPart( 'like' ) : Args( 0 ) {
 			});
 		}
 	}
-	
+
 	# Bounce back to the item
 	$c->response->redirect( $c->request->referer );
 }
@@ -441,12 +441,12 @@ Search the shop.
 
 sub search {
 	my ( $self, $c ) = @_;
-	
+
 	if ( $c->request->param( 'search' ) ) {
 		my $search = $c->request->param( 'search' );
 		my @items;
 		my %item_hash;
-		
+
 		# Look in the item name/desc
 		my @results = $c->model( 'DB::ShopItem' )->search([
 			{ name        => { 'LIKE', '%'.$search.'%'} },
@@ -476,11 +476,11 @@ sub search {
 			}
 			# Add the match string to the page result
 			$result->{ match } = $match;
-		
+
 			# Add the item to a de-duping hash
 			$item_hash{ $result->code } = $result;
 		}
-		
+
 		# Look at any related elements too
 		my @elements = $c->model( 'DB::ShopItemElement' )->search({
 			content => { 'LIKE', '%'.$search.'%'},
@@ -499,7 +499,7 @@ sub search {
 			# Add the item to a de-duping hash
 			$item_hash{ $element->item->code } = $element->item;
 		}
-		
+
 		# Push the de-duped items onto the results array
 		foreach my $item ( keys %item_hash ) {
 			push @items, $item_hash{ $item };
@@ -520,13 +520,13 @@ ShinyCMS is copyright (c) 2009-2011 Shiny Ideas (www.shinyideas.co.uk).
 
 =head1 LICENSE
 
-This program is free software: you can redistribute it and/or modify it 
-under the terms of the GNU Affero General Public License as published by 
-the Free Software Foundation, either version 3 of the License, or (at your 
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at your
 option) any later version.
 
-You should have received a copy of the GNU Affero General Public License 
-along with this program (see docs/AGPL-3.0.txt).  If not, see 
+You should have received a copy of the GNU Affero General Public License
+along with this program (see docs/AGPL-3.0.txt).  If not, see
 http://www.gnu.org/licenses/
 
 =cut
