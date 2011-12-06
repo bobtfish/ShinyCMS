@@ -91,7 +91,7 @@ Build the menu data structure.
 
 sub build_menu : CaptureArgs( 0 ) {
 	my ( $self, $c ) = @_;
-	
+	return;
 	# Stash the current date
 	$c->stash->{ now } = DateTime->now;
 	

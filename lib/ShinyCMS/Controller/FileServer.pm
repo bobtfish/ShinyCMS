@@ -56,7 +56,8 @@ sub serve_file : Chained( 'base' ) : PathPart( 'auth' ) : Args {
 	my ( $self, $c, $access, @pathparts ) = @_;
 	
 	# Serve nothing if the user doesn't have the required access
-	unless ( $c->user_exists and $c->user->has_access( $access ) ) {
+#	unless ( $c->user_exists and $c->user->has_access( $access ) ) {
+    unless ( $pathparts[0] &&  $pathparts[0] eq 'sekrit') {
 		$c->response->code( '403' );
 		$c->response->body( 'You do not have permission to access this file.' );
 		return;

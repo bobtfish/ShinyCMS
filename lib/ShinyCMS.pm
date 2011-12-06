@@ -12,7 +12,7 @@ use Catalyst qw/
 	Authentication
 	
 	Session
-	Session::Store::DBIC
+	Session::Store::File
 	Session::State::Cookie
 /;
 

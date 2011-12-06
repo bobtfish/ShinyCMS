@@ -117,7 +117,7 @@ Display search form, process submitted search forms.
 sub search : Path( 'search' ) : Args( 0 ) {
 	my ( $self, $c ) = @_;
 	
-	$c->forward( 'Root', 'build_menu' );
+#	$c->forward( 'Root', 'build_menu' );
 	
 	if ( $c->request->param( 'search' ) ) {
 		$c->forward( 'Pages',      'search' );
@@ -209,7 +209,7 @@ Stash shared content for use across site.
 
 sub stash_shared_content {
 	my ( $self, $c ) = @_;
-	
+	return;
 	# Get shared content elements
 	my @elements = $c->model( 'DB::SharedContent' )->all;
 	foreach my $element ( @elements ) {
